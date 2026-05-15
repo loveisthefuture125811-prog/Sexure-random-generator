@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Selector">
+<title>Selector</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0A0A0A;--bg1:#191919;--bg2:#282828;--bg3:#343434;--bg4:#444444;
+  --gold:#E2B94A;--gold-hi:#F7D268;--gold-lo:rgba(226,185,74,.20);
+  --gold-mid:rgba(226,185,74,.44);--gold-ring:rgba(226,185,74,.18);
+  --text:#F4EFE7;--text-2:#CEC6BA;--text-3:#908680;
+  --red:#E87070;--red-lo:rgba(232,112,112,.14);
+  --green:#6ED490;--teal:#5BC4C0;
+  --border:rgba(226,185,74,.32);--border-hi:rgba(226,185,74,.72);
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
+  --safe-l:env(safe-area-inset-left,0px);--safe-r:env(safe-area-inset-right,0px);
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --mono:'DM Mono','Courier New',monospace;
+  --ease-out:cubic-bezier(0.16,1,0.3,1);
+  --ease-spring:cubic-bezier(0.34,1.56,0.64,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);-webkit-font-smoothing:antialiased;overscroll-behavior:none;}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");background-size:200px;pointer-events:none;z-index:999;opacity:.6;}
+#app{display:flex;flex-direction:column;height:100dvh;padding-top:var(--safe-t);}
+#hdr{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:14px calc(20px + var(--safe-r)) 14px calc(20px + var(--safe-l));border-bottom:1px solid var(--border);background:rgba(14,14,14,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:20;}
+.hdr-brand{display:flex;flex-direction:column;gap:3px;}
+.hdr-title{font-family:var(--serif);font-size:1.25rem;font-weight:600;color:var(--gold);letter-spacing:.5px;line-height:1;}
+.hdr-sub{font-size:.55rem;letter-spacing:3.5px;text-transform:uppercase;color:var(--text-3);}
+#install-btn{display:none;align-items:center;gap:5px;background:transparent;border:1px solid var(--border-hi);color:var(--gold);font-family:var(--mono);font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;padding:7px 12px;border-radius:4px;cursor:pointer;transition:background .2s;}
+#install-btn.show{display:flex;}
+#install-btn:hover{background:var(--gold-lo);}
+#panels{flex:1;position:relative;overflow:hidden;}
+.panel{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:18px calc(18px + var(--safe-r)) 0 calc(18px + var(--safe-l));display:flex;flex-direction:column;gap:12px;opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .22s var(--ease-out),transform .22s var(--ease-out);}
+#panel-sessions,#panel-sets{padding-bottom:24px;}
+.panel.active{opacity:1;pointer-events:auto;transform:translateY(0);}
+#nav{flex-shrink:0;display:flex;border-top:1px solid var(--border);background:rgba(12,12,12,.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding-bottom:var(--safe-b);padding-left:var(--safe-l);padding-right:var(--safe-r);}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;background:transparent;border:none;cursor:pointer;color:var(--text-3);font-family:var(--mono);font-size:.55rem;letter-spacing:2px;text-transform:uppercase;transition:color .2s;position:relative;}
+.nav-icon{font-size:1.15rem;line-height:1;transition:transform .22s var(--ease-spring);}
+.nav-btn.active{color:var(--gold);}
+.nav-btn.active .nav-icon{transform:scale(1.2);}
+.nav-badge{position:absolute;top:7px;right:calc(50% - 18px);background:var(--gold);color:#000;font-size:.48rem;font-weight:700;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;padding:0 3px;opacity:0;transform:scale(.3);transition:opacity .2s,transform .25s var(--ease-spring);pointer-events:none;}
+.nav-badge.on{opacity:1;transform:scale(1);}
+.label{font-size:.6rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-3);}
+.banner{padding:10px 14px;border-radius:6px;font-size:.76rem;line-height:1.5;border:1px solid;display:none;}
+.banner.on{display:block;}
+.banner-warn{background:var(--red-lo);color:#f0b0b0;border-color:rgba(220,100,100,.40);}
+/* FIX: info banner with gold tones for non-error notices */
+.banner-info{background:rgba(226,185,74,.07);color:var(--text-2);border-color:rgba(226,185,74,.25);font-size:.68rem;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:var(--mono);font-weight:500;border-radius:6px;cursor:pointer;border:1px solid;transition:background .15s,transform .07s,box-shadow .15s,opacity .15s;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
+.btn:active{transform:scale(.95);}
+.btn:disabled{opacity:.35;pointer-events:none;}
+.btn-xl{min-height:58px;font-size:.88rem;letter-spacing:2px;padding:0 24px;width:100%;}
+.btn-md{min-height:44px;font-size:.72rem;padding:0 16px;}
+.btn-sm{min-height:34px;font-size:.62rem;padding:0 12px;letter-spacing:.8px;}
+.btn-gold{background:var(--gold);color:#000;border-color:var(--gold);}
+.btn-gold:hover{background:var(--gold-hi);box-shadow:0 4px 28px rgba(226,185,74,.35);}
+.btn-outline{background:transparent;color:var(--gold);border-color:var(--border-hi);}
+.btn-outline:hover{background:var(--gold-lo);}
+.btn-ghost{background:transparent;color:var(--text-2);border-color:var(--border);}
+.btn-ghost:hover{background:var(--bg3);border-color:rgba(226,185,74,.5);color:var(--text);}
+.btn-danger{background:transparent;color:var(--red);border-color:rgba(220,100,100,.35);}
+.btn-danger:hover{background:var(--red-lo);}
+.ic-btn{background:transparent;border:1px solid var(--border);color:var(--text-3);border-radius:5px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem;transition:background .15s,color .15s,border-color .15s,transform .07s;flex-shrink:0;}
+.ic-btn:active{transform:scale(.9);}
+.ic-btn.teal{color:var(--teal);border-color:rgba(91,196,192,.3);}
+.ic-btn.teal:hover{background:rgba(91,196,192,.1);border-color:rgba(91,196,192,.6);}
+.ic-btn.gold{color:var(--gold);border-color:var(--gold-mid);}
+.ic-btn.gold:hover{background:var(--gold-lo);border-color:var(--border-hi);}
+.ic-btn.red{color:var(--red);border-color:rgba(200,90,90,.25);}
+.ic-btn.red:hover{background:var(--red-lo);border-color:rgba(200,90,90,.55);}
+/* FIX: .saved class now used by JS (was using 'gold' — CSS rule was dead) */
+.ic-btn.saved{color:var(--gold);border-color:var(--gold-mid);background:var(--gold-lo);}
+.ic-btn.saved:hover{border-color:var(--border-hi);}
+::-webkit-scrollbar{width:2px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* FIX: toast is now flex to accommodate inline undo button */
+#toast{position:fixed;bottom:calc(var(--safe-b) + 74px);left:50%;transform:translateX(-50%) translateY(12px);background:var(--bg3);border:1px solid var(--border-hi);color:var(--text-2);font-family:var(--mono);font-size:.65rem;letter-spacing:1.2px;padding:9px 14px 9px 18px;border-radius:20px;z-index:200;opacity:0;pointer-events:none;transition:opacity .25s,transform .28s var(--ease-out);white-space:nowrap;display:flex;align-items:center;gap:0;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
+/* FIX: inline undo button */
+#toast-undo{display:none;background:transparent;border:none;border-left:1px solid var(--border-hi);color:var(--gold);font-family:var(--mono);font-size:.65rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;padding:0 0 0 12px;margin-left:12px;flex-shrink:0;transition:color .15s;}
+#toast-undo:hover{color:var(--gold-hi);}
+
+.chips-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.chips-header-left{display:flex;align-items:center;gap:8px;}
+.mode-segs{display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:2px;gap:2px;}
+.mode-seg{background:transparent;border:none;color:var(--text-3);font-family:var(--mono);font-size:.58rem;letter-spacing:1px;padding:4px 8px;border-radius:3px;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;line-height:1;}
+.mode-seg.active{background:var(--bg4);color:var(--gold);box-shadow:inset 0 1px 2px rgba(0,0,0,.4);}
+.mode-seg:not(.active):hover{color:var(--text-2);}
+.count-pill{font-size:.6rem;letter-spacing:1.5px;color:var(--gold);background:var(--gold-lo);border:1px solid var(--border);padding:3px 10px;border-radius:20px;}
+#save-set-btn{font-size:.72rem;}
+#chip-field{min-height:90px;max-height:210px;overflow-y:auto;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:7px;align-content:flex-start;transition:border-color .2s,box-shadow .2s;cursor:text;}
+#chip-field:focus-within{border-color:var(--border-hi);box-shadow:0 0 0 3px var(--gold-ring);}
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--bg4);border:1px solid rgba(226,185,74,.38);border-radius:20px;padding:4px 8px 4px 11px;font-size:.78rem;color:var(--text);max-width:180px;transition:background .15s,border-color .15s;cursor:default;user-select:none;-webkit-user-select:none;}
+.chip:hover{border-color:var(--border-hi);}
+.chip-x{font-size:.75rem;color:var(--text-3);cursor:pointer;line-height:1;padding:1px 2px;border-radius:50%;transition:color .15s,background .15s;flex-shrink:0;}
+.chip-x:hover{color:var(--red);background:var(--red-lo);}
+.chip-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
+#chip-input{border:none;outline:none;background:transparent;color:var(--text);font-family:var(--mono);font-size:.82rem;caret-color:var(--gold);flex:1;min-width:120px;padding:4px 2px;line-height:1.4;}
+#chip-input::placeholder{color:var(--text-3);font-size:.76rem;}
+.preset-wrap{position:relative;}
+.preset-wrap::after{content:'';position:absolute;right:0;top:0;bottom:2px;width:52px;background:linear-gradient(to right,transparent,var(--bg));pointer-events:none;z-index:1;}
+#preset-bar{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
+#preset-bar::-webkit-scrollbar{display:none;}
+.preset-chip{flex-shrink:0;background:transparent;border:1px solid var(--border);color:var(--text-3);border-radius:20px;padding:4px 12px;font-family:var(--mono);font-size:.62rem;letter-spacing:1px;cursor:pointer;transition:background .15s,color .15s,border-color .15s;white-space:nowrap;}
+.preset-chip:hover{background:var(--gold-lo);color:var(--gold);border-color:var(--border-hi);}
+#paste-area{display:none;width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:11px 14px;font-family:var(--mono);font-size:.82rem;line-height:1.7;resize:none;height:100px;border-radius:6px;caret-color:var(--gold);}
+#paste-area.show{display:block;}
+#paste-area:focus{outline:none;border-color:var(--border-hi);box-shadow:0 0 0 3px var(--gold-ring);}
+#idle{min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid var(--border-hi);border-radius:10px;background:var(--bg2);gap:10px;position:relative;overflow:hidden;}
+.idle-ring{position:relative;width:58px;height:58px;}
+.idle-ring::before,.idle-ring::after{content:'';position:absolute;border-radius:50%;}
+.idle-ring::before{inset:0;border:1.5px solid var(--border);animation:ring-pulse 3s ease-in-out infinite;}
+.idle-ring::after{inset:12px;border:1px solid var(--gold-mid);animation:ring-pulse 3s ease-in-out infinite .4s;}
+.idle-dot{position:absolute;inset:24px;background:var(--gold);border-radius:50%;opacity:.9;animation:dot-breathe 3s ease-in-out infinite;}
+@keyframes ring-pulse{0%,100%{transform:scale(1);opacity:.45}50%{transform:scale(1.12);opacity:1}}
+@keyframes dot-breathe{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.3);opacity:1}}
+#idle-label{font-size:.6rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-2);}
+#reel-wrap{display:none;border:1px solid var(--border-hi);border-radius:10px;overflow:hidden;background:var(--bg2);position:relative;}
+#reel-win{height:204px;overflow:hidden;position:relative;}
+#reel-win::before,#reel-win::after{content:'';position:absolute;left:0;right:0;height:80px;z-index:3;pointer-events:none;}
+#reel-win::before{top:0;background:linear-gradient(to bottom,var(--bg2),transparent);}
+#reel-win::after{bottom:0;background:linear-gradient(to top,var(--bg2),transparent);}
+#reel-hairlines{position:absolute;left:20px;right:20px;top:50%;transform:translateY(-50%);height:68px;border-top:1px solid rgba(226,185,74,.90);border-bottom:1px solid rgba(226,185,74,.90);pointer-events:none;z-index:4;}
+#reel-hairlines::before,#reel-hairlines::after{content:'';position:absolute;top:-1px;bottom:-1px;width:3px;background:var(--gold);border-radius:2px;opacity:.7;}
+#reel-hairlines::before{left:-3px;}
+#reel-hairlines::after{right:-3px;}
+#reel-inner{will-change:transform;}
+.reel-item{height:68px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:1.6rem;font-weight:600;color:var(--text);padding:0 30px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#reel-inner.spinning{filter:blur(2px);}
+#reel-inner.settling{filter:blur(0);transition:filter .4s ease;}
+#locked{display:none;min-height:140px;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:24px 20px;border:1px solid var(--gold-mid);border-radius:10px;background:var(--bg2);text-align:center;position:relative;overflow:hidden;}
+#locked.show{display:flex;}
+#locked::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 65%,rgba(226,185,74,.22),transparent 65%);pointer-events:none;}
+#locked::after{content:'';position:absolute;inset:-1px;border-radius:10px;background:linear-gradient(135deg,rgba(226,185,74,.22),transparent 40%,rgba(226,185,74,.10));pointer-events:none;}
+#locked-val{font-family:var(--serif);font-size:2.4rem;font-weight:700;color:var(--gold-hi);line-height:1.15;word-break:break-word;max-width:100%;position:relative;z-index:1;text-shadow:0 0 40px rgba(226,185,74,.55);}
+@keyframes lock-in{0%{transform:scale(.82) translateY(6px);opacity:0;filter:blur(4px)}60%{transform:scale(1.05);opacity:1;filter:blur(0)}100%{transform:scale(1) translateY(0);opacity:1;filter:blur(0)}}
+#locked-val.pop{animation:lock-in .45s var(--ease-out) both;}
+#locked-meta{font-size:.58rem;color:var(--text-3);letter-spacing:2px;text-transform:uppercase;position:relative;z-index:1;}
+#freq-zone{display:none;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;gap:10px;flex-direction:column;}
+#freq-zone.show{display:flex;}
+.freq-header{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+.freq-title{font-size:.6rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-3);}
+.freq-expected-note{font-size:.56rem;color:var(--text-3);letter-spacing:1px;opacity:.75;white-space:nowrap;}
+#freq-bars{display:flex;flex-direction:column;gap:7px;}
+.freq-row{display:flex;flex-direction:column;gap:3px;}
+.freq-row-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.freq-label{font-size:.74rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
+.freq-label.winner{color:var(--gold-hi);}
+.freq-nums{font-size:.62rem;color:var(--text-3);white-space:nowrap;flex-shrink:0;font-family:var(--mono);}
+.freq-nums .pct{color:var(--text-2);}
+/* FIX: expected per-bar in weight mode */
+.freq-nums .exp{color:var(--text-3);font-size:.56rem;opacity:.7;}
+.freq-track{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.freq-fill{height:100%;border-radius:3px;background:linear-gradient(to right,rgba(226,185,74,.5),var(--gold));transition:width .5s var(--ease-out);width:0%;}
+.freq-fill.winner{background:linear-gradient(to right,var(--gold),var(--gold-hi));}
+.freq-fill.zero{background:var(--bg4);}
+#weight-section{display:none;flex-direction:column;gap:8px;}
+#weight-section.show{display:flex;}
+.weight-header{display:flex;justify-content:space-between;align-items:center;}
+#weight-list{display:flex;flex-direction:column;gap:5px;max-height:160px;overflow-y:auto;}
+.weight-row{display:flex;align-items:center;gap:8px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;padding:7px 10px;}
+.weight-label{flex:1;font-size:.8rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.weight-inp{width:52px;background:var(--bg2);border:1px solid var(--border);color:var(--gold-hi);font-family:var(--mono);font-size:.78rem;text-align:center;border-radius:4px;padding:4px 6px;caret-color:var(--gold);}
+.weight-inp:focus{outline:none;border-color:var(--border-hi);}
+#spin-footer{position:sticky;bottom:0;z-index:10;margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-top:20px;padding-bottom:calc(18px + var(--safe-b));background:linear-gradient(to bottom,transparent 0px,var(--bg) 20px);}
+#post-actions{display:none;gap:8px;flex-wrap:wrap;}
+#post-actions.show{display:flex;}
+#post-actions .btn{flex:1;min-width:76px;}
+#main-action{display:flex;}
+.pnl-header{display:flex;align-items:center;justify-content:space-between;}
+.pnl-title{font-family:var(--serif);font-style:italic;font-size:1.3rem;color:var(--gold);}
+/* FIX: cap notice */
+.cap-notice{font-size:.6rem;color:var(--text-3);letter-spacing:1px;text-align:center;padding:6px 0 2px;opacity:.7;}
+.search-wrap{position:relative;}
+.search-wrap input{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:9px 14px 9px 36px;font-family:var(--mono);font-size:.8rem;border-radius:6px;caret-color:var(--gold);transition:border-color .2s,box-shadow .2s;}
+.search-wrap input::placeholder{color:var(--text-3);}
+.search-wrap input:focus{outline:none;border-color:var(--border-hi);box-shadow:0 0 0 3px var(--gold-ring);}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:.85rem;pointer-events:none;}
+.scard{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .2s;}
+.scard:hover{border-color:var(--border-hi);}
+.scard-head{padding:12px 14px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;user-select:none;-webkit-user-select:none;}
+.scard-main{flex:1;min-width:0;}
+.scard-opts-preview{font-size:.7rem;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}
+.scard-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:.58rem;color:var(--text-3);letter-spacing:.8px;margin-top:3px;}
+.scard-badge{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;}
+.scard-spins{font-family:var(--serif);font-size:1.4rem;font-weight:700;color:var(--gold-hi);line-height:1;}
+.scard-spins-lbl{font-size:.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);}
+.scard-expand{display:none;}
+.scard-expand.open{display:block;}
+.scard-dist{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--border);}
+.dist-row{display:flex;flex-direction:column;gap:3px;}
+.dist-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.dist-label{font-size:.76rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
+.dist-label.top{color:var(--gold-hi);font-weight:500;}
+.dist-nums{font-size:.62rem;color:var(--text-3);white-space:nowrap;flex-shrink:0;}
+.dist-nums .pct{color:var(--gold);}
+.dist-track{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.dist-fill{height:100%;border-radius:3px;background:linear-gradient(to right,rgba(226,185,74,.4),var(--gold));}
+.dist-fill.top{background:linear-gradient(to right,var(--gold),var(--gold-hi));}
+.set-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 14px 12px;display:flex;gap:10px;align-items:flex-start;transition:border-color .2s,background .2s;}
+.set-card:hover{border-color:var(--border-hi);background:var(--bg3);}
+.set-body{flex:1;min-width:0;}
+.set-name{font-family:var(--serif);font-size:1.05rem;font-weight:600;color:var(--text);line-height:1.2;margin-bottom:4px;}
+.set-opts{font-size:.66rem;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.set-meta{font-size:.56rem;color:var(--text-3);letter-spacing:1px;margin-top:5px;}
+.set-actions{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.set-name-inp{background:transparent;border:none;border-bottom:1px dashed var(--border);color:var(--text);font-family:var(--serif);font-size:1.05rem;font-weight:600;outline:none;width:100%;padding:0 0 2px;caret-color:var(--gold);line-height:1.2;margin-bottom:4px;}
+.set-name-inp:focus{border-bottom-color:var(--gold);}
+.empty{text-align:center;padding:40px 24px;color:var(--text-3);}
+.empty-icon{font-size:2rem;margin-bottom:12px;opacity:.5;}
+.empty-text{font-size:.68rem;letter-spacing:1.2px;text-transform:uppercase;line-height:2.2;}
+#modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.80);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:60;display:flex;align-items:flex-end;justify-content:center;padding-bottom:var(--safe-b);opacity:0;pointer-events:none;transition:opacity .25s;}
+#modal-bg.open{opacity:1;pointer-events:auto;}
+#modal-sheet{width:100%;max-width:520px;background:var(--bg3);border:1px solid var(--border-hi);border-radius:18px 18px 0 0;padding:0 24px 28px;transform:translateY(100%);transition:transform .32s var(--ease-out);}
+#modal-bg.open #modal-sheet{transform:translateY(0);}
+.modal-handle{width:36px;height:3px;background:var(--border-hi);border-radius:2px;margin:14px auto 22px;}
+#modal-kicker{font-size:.58rem;letter-spacing:3px;text-transform:uppercase;color:var(--text-2);margin-bottom:6px;}
+#modal-msg{font-family:var(--serif);font-style:italic;font-size:1rem;color:var(--text);line-height:1.6;margin-bottom:22px;}
+#modal-msg strong{font-style:normal;color:var(--gold);}
+.modal-btns{display:flex;gap:10px;}
+.modal-btns .btn{flex:1;min-height:50px;font-size:.8rem;}
+#confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:100;display:none;}
+#confetti-canvas.active{display:block;}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
+@media(prefers-contrast:more){:root{--gold:#FFD700;--border:rgba(255,215,0,.7);--text-3:#AAA;--bg2:#2E2E2E;}}
+</style>
+</head>
+<body>
+<canvas id="confetti-canvas"></canvas>
+<!-- FIX: toast now has msg span + undo button for toastWithUndo() -->
+<div id="toast" aria-live="polite"><span id="toast-msg"></span><button id="toast-undo" aria-label="Undo">Undo</button></div>
+<div id="app">
+  <header id="hdr">
+    <div class="hdr-brand">
+      <div class="hdr-title">Selector</div>
+      <div class="hdr-sub">Cryptographic random</div>
+    </div>
+    <button id="install-btn" aria-label="Install app">&#x2B07; Install</button>
+  </header>
+  <div id="panels">
+    <div class="panel active" id="panel-spin" role="tabpanel" aria-label="Spin">
+      <div>
+        <div class="chips-header">
+          <div class="chips-header-left">
+            <span class="label">Options</span>
+            <span class="count-pill" id="count-pill">0 options</span>
+            <button class="ic-btn" id="save-set-btn" title="Save this option set" aria-label="Save option set" style="display:none">&#9734;</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="mode-segs" role="group" aria-label="Input mode">
+              <button class="mode-seg active" id="mode-chip-btn">&#x229E; Chips</button>
+              <button class="mode-seg" id="mode-text-btn">&#x2328; Text</button>
+            </div>
+            <button class="ic-btn" id="weight-toggle-btn" title="Weighted probability" aria-pressed="false">&#x2696;</button>
+          </div>
+        </div>
+        <div id="chip-field" role="group" aria-label="Options list">
+          <input id="chip-input" type="text" placeholder="Type option, press Enter or comma&hellip;" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Add option">
+        </div>
+        <textarea id="paste-area" placeholder="Option A&#10;Option B&#10;Option C&#10;&hellip;" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+        <!-- FIX: warn when current options differ from the active session -->
+        <div id="session-change-note" class="banner banner-info" style="display:none;margin-top:6px">
+          Options changed &mdash; a new session will start on the next spin.
+        </div>
+      </div>
+      <div class="preset-wrap">
+        <div id="preset-bar" aria-label="Quick-add presets">
+          <button class="preset-chip" data-preset="yes,no">Yes / No</button>
+          <button class="preset-chip" data-preset="yes,no,maybe">Yes / No / Maybe</button>
+          <button class="preset-chip" data-preset="heads,tails">Coin flip</button>
+          <button class="preset-chip" data-preset="1,2,3,4,5,6">Dice (1&ndash;6)</button>
+          <button class="preset-chip" data-preset="mon,tue,wed,thu,fri,sat,sun">Days</button>
+          <button class="preset-chip" data-preset="jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec">Months</button>
+        </div>
+      </div>
+      <div id="weight-section">
+        <div class="weight-header">
+          <span class="label">Weights (probability bias)</span>
+          <button class="btn btn-sm btn-ghost" id="reset-weights-btn">Reset</button>
+        </div>
+        <div id="weight-list"></div>
+      </div>
+      <div id="result-zone">
+        <div id="idle">
+          <div class="idle-ring"><div class="idle-dot"></div></div>
+          <div id="idle-label">Enter options &amp; spin</div>
+        </div>
+        <div id="reel-wrap" aria-hidden="true">
+          <div id="reel-win">
+            <div id="reel-hairlines"></div>
+            <div id="reel-inner"></div>
+          </div>
+        </div>
+        <div id="locked" aria-live="assertive" aria-atomic="true">
+          <div id="locked-val"></div>
+          <div id="locked-meta"></div>
+        </div>
+      </div>
+      <div id="freq-zone" aria-label="Current session frequency">
+        <div class="freq-header">
+          <span class="freq-title">This session</span>
+          <span class="freq-expected-note" id="freq-expected-note"></span>
+        </div>
+        <div id="freq-meta" style="font-size:.58rem;color:var(--text-3);letter-spacing:1px;margin-top:-4px"></div>
+        <div id="freq-bars"></div>
+      </div>
+      <div id="spin-footer">
+        <div id="warn-banner" class="banner banner-warn" role="alert"></div>
+        <div id="post-actions">
+          <button class="btn btn-md btn-ghost" id="start-over-btn">&#x21BA; Start Over</button>
+          <button class="btn btn-md btn-ghost" id="share-btn" style="display:none">&#x2191; Share</button>
+          <button class="btn btn-md btn-ghost" id="copy-btn">&#x2398; Copy</button>
+        </div>
+        <div id="main-action">
+          <button class="btn btn-xl btn-gold" id="spin-btn">&#x25B6;&nbsp;&nbsp;Spin</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel" id="panel-sessions" role="tabpanel" aria-label="Sessions">
+      <div class="pnl-header">
+        <span class="pnl-title">Sessions</span>
+        <button class="btn btn-sm btn-danger" id="clear-sessions-btn">&#x2715; Clear all</button>
+      </div>
+      <!-- FIX: cap notice -->
+      <div id="sessions-cap-notice" class="cap-notice" style="display:none">Showing last 100 sessions &mdash; oldest have been removed.</div>
+      <div class="search-wrap">
+        <span class="search-icon">&#x2299;</span>
+        <input id="sess-search" type="search" placeholder="Filter by option&hellip;" autocomplete="off" aria-label="Filter sessions">
+      </div>
+      <div id="sess-list"></div>
+    </div>
+    <div class="panel" id="panel-sets" role="tabpanel" aria-label="Saved Sets">
+      <div class="pnl-header">
+        <span class="pnl-title">Saved Sets</span>
+        <button class="btn btn-sm btn-danger" id="clear-sets-btn">&#x2715; Clear all</button>
+      </div>
+      <div id="sets-list"></div>
+    </div>
+  </div>
+  <nav id="nav" aria-label="App navigation">
+    <button class="nav-btn active" data-tab="spin" aria-selected="true"><span class="nav-icon">&#9678;</span><span>Spin</span></button>
+    <button class="nav-btn" data-tab="sessions" aria-selected="false"><span class="nav-icon">&#x2261;</span><span>Sessions</span><span class="nav-badge" id="sess-badge"></span></button>
+    <button class="nav-btn" data-tab="sets" aria-selected="false"><span class="nav-icon">&#9672;</span><span>Saved Sets</span><span class="nav-badge" id="sets-badge"></span></button>
+  </nav>
+</div>
+<div id="modal-bg" role="dialog" aria-modal="true" aria-labelledby="modal-kicker">
+  <div id="modal-sheet">
+    <div class="modal-handle"></div>
+    <div id="modal-kicker">Confirm</div>
+    <div id="modal-msg"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" id="modal-no">Cancel</button>
+      <button class="btn btn-gold" id="modal-yes">Confirm</button>
+    </div>
+  </div>
+</div>
+<script>
+'use strict';
+const DB={get(k,fb=null){try{const v=localStorage.getItem('srs3_'+k);return v===null?fb:JSON.parse(v);}catch{return fb;}},set(k,v){try{localStorage.setItem('srs3_'+k,JSON.stringify(v));}catch{}}};
+let chips=DB.get('chips',[]);
+let weights=DB.get('weights',{});
+let sessions=DB.get('sessions',[]);
+let savedSets=DB.get('sets',[]);
+let curSession=DB.get('curSession',null);
+let lastHit=null,weightMode=false,textMode=false;
+const $=id=>document.getElementById(id);
+const spinBtn=$('spin-btn'),weightToggle=$('weight-toggle-btn'),weightSection=$('weight-section'),weightList=$('weight-list'),resetWeights=$('reset-weights-btn');
+const chipField=$('chip-field'),chipInput=$('chip-input'),pasteArea=$('paste-area');
+const modeChipBtn=$('mode-chip-btn'),modeTextBtn=$('mode-text-btn'),presetBar=$('preset-bar');
+const countPill=$('count-pill'),postActions=$('post-actions');
+const idleEl=$('idle'),reelWrap=$('reel-wrap'),reelInner=$('reel-inner');
+const lockedEl=$('locked'),lockedVal=$('locked-val'),lockedMeta=$('locked-meta');
+const warnBanner=$('warn-banner'),freqZone=$('freq-zone'),freqBars=$('freq-bars');
+const freqMetaEl=$('freq-meta'),freqExpNote=$('freq-expected-note');
+const sessList=$('sess-list'),setsList=$('sets-list'),sessSearch=$('sess-search');
+const sessBadge=$('sess-badge'),setsBadge=$('sets-badge'),installBtn=$('install-btn');
+const clearSessionsBtn=$('clear-sessions-btn'),clearSetsBtn=$('clear-sets-btn');
+const saveSetBtn=$('save-set-btn'),startOverBtn=$('start-over-btn'),shareBtn=$('share-btn'),copyBtn=$('copy-btn');
+const confettiCanvas=$('confetti-canvas'),modalBg=$('modal-bg'),modalMsg=$('modal-msg'),modalYes=$('modal-yes'),modalNo=$('modal-no');
+const toastEl=$('toast'),toastMsgEl=$('toast-msg'),toastUndoBtn=$('toast-undo');
+const sessionChangeNote=$('session-change-note'),sessionsCapNotice=$('sessions-cap-notice');
+
+/* FIX: toast split into plain + undo variants */
+let toastTimer=null;
+function toast(msg,duration=2800){
+  toastMsgEl.textContent=msg;
+  toastUndoBtn.style.display='none';
+  toastUndoBtn.onclick=null;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toastEl.classList.remove('show'),duration);
+}
+function toastWithUndo(msg,undoFn,duration=4200){
+  toastMsgEl.textContent=msg;
+  toastUndoBtn.style.display='';
+  toastUndoBtn.onclick=()=>{
+    clearTimeout(toastTimer);
+    toastEl.classList.remove('show');
+    toastUndoBtn.style.display='none';
+    undoFn();
+  };
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{toastEl.classList.remove('show');toastUndoBtn.style.display='none';},duration);
+}
+
+function ask(html){
+  return new Promise(resolve=>{
+    modalMsg.innerHTML=html;
+    modalBg.classList.add('open');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>modalYes.focus()));
+    function done(ok){modalBg.classList.remove('open');cleanup();resolve(ok);}
+    const onY=()=>done(true),onN=()=>done(false),onBg=e=>{if(e.target===modalBg)done(false);},onK=e=>{if(e.key==='Escape')done(false);};
+    function cleanup(){modalYes.removeEventListener('click',onY);modalNo.removeEventListener('click',onN);modalBg.removeEventListener('click',onBg);document.removeEventListener('keydown',onK);}
+    modalYes.addEventListener('click',onY);modalNo.addEventListener('click',onN);modalBg.addEventListener('click',onBg);document.addEventListener('keydown',onK);
+  });
+}
+
+const rng=window.crypto||window.msCrypto;
+const hasRNG=!!(rng&&rng.getRandomValues);
+function secureU32(){const b=new Uint32Array(1);rng.getRandomValues(b);return b[0];}
+function fairIdx(len){const MAX=0x100000000,lim=MAX-(MAX%len);let n;do{n=secureU32();}while(n>=lim);return n%len;}
+function weightedPick(options,wmap){
+  const ws=options.map(o=>Math.max(.001,parseFloat(wmap[o])||1));
+  const total=ws.reduce((a,b)=>a+b,0);
+  const pool=[];
+  options.forEach((o,i)=>{const c=Math.round(ws[i]/total*10000);for(let j=0;j<c;j++)pool.push(i);});
+  return options[pool[fairIdx(pool.length)]];
+}
+/* FIX: compute per-option expected % from weights for freq display */
+function getWeightedExpected(options,wmap){
+  const ws=options.map(o=>Math.max(0.001,parseFloat(wmap[o])||1));
+  const total=ws.reduce((a,b)=>a+b,0);
+  const r={};
+  options.forEach((o,i)=>{r[o]=(ws[i]/total*100).toFixed(0);});
+  return r;
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDate(iso){try{return new Date(iso).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});}catch{return '';}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function buzz(p){try{if(navigator.vibrate)navigator.vibrate(p);}catch{}}
+function optKey(opts){return [...opts].sort().join('|');}
+
+function updateBadges(){
+  const all=sessions.length+(curSession&&curSession.spins.length?1:0);
+  sessBadge.textContent=all>99?'99+':all;sessBadge.classList.toggle('on',all>0);
+  setsBadge.textContent=savedSets.length>99?'99+':savedSets.length;setsBadge.classList.toggle('on',savedSets.length>0);
+}
+
+/* FIX: show note when current chips differ from active session options */
+function updateSessionChangeNote(){
+  const changed=curSession&&curSession.spins.length>0&&chips.length>=2&&curSession.optKey!==optKey(chips);
+  sessionChangeNote.style.display=changed?'':'none';
+}
+
+function sessionKey(){return optKey(chips);}
+function ensureSession(){
+  const key=sessionKey();
+  if(!curSession||curSession.optKey!==key){
+    if(curSession&&curSession.spins.length>0)archiveSession();
+    curSession={id:uid(),options:[...chips],optKey:key,spins:[],startedAt:new Date().toISOString()};
+    DB.set('curSession',curSession);
+  }
+}
+function recordSpin(value){
+  ensureSession();
+  curSession.spins.push({value,ts:new Date().toISOString()});
+  curSession.lastAt=new Date().toISOString();
+  DB.set('curSession',curSession);
+  updateBadges();
+  updateSessionChangeNote();
+}
+function archiveSession(){
+  if(!curSession||!curSession.spins.length)return;
+  const count=curSession.spins.length;
+  sessions.unshift({...curSession});
+  if(sessions.length>100)sessions.length=100;
+  DB.set('sessions',sessions);
+  curSession=null;DB.set('curSession',null);
+  if(document.querySelector('#panel-sessions.active'))renderSessions(sessSearch.value);
+  updateBadges();
+  toast('Session archived \u00b7 '+count+' spin'+(count!==1?'s':'')+' saved');
+}
+function startOver(){
+  if(!curSession||!curSession.spins.length)return;
+  archiveSession();ensureSession();renderFreq();showIdle();lastHit=null;
+  postActions.classList.remove('show');updateSessionChangeNote();
+}
+
+function buildFreqData(spins,options){
+  const freq={};options.forEach(o=>freq[o]=0);
+  spins.forEach(s=>{if(freq[s.value]!==undefined)freq[s.value]++;});
+  const total=spins.length;
+  const maxCount=Object.values(freq).reduce((a,b)=>Math.max(a,b),1);
+  return{freq,total,maxCount};
+}
+
+/* FIX: in weight mode, expected note is per-bar not a misleading flat % */
+function renderFreq(){
+  const sess=curSession;
+  if(!sess||sess.spins.length===0){freqZone.classList.remove('show');return;}
+  freqZone.classList.add('show');
+  const{freq,total,maxCount}=buildFreqData(sess.spins,sess.options);
+  freqMetaEl.textContent=total+' spin'+(total!==1?'s':'')+' this session';
+  let expectedPcts=null;
+  if(weightMode&&chips.length>=2){
+    freqExpNote.textContent='weighted mode';
+    expectedPcts=getWeightedExpected(sess.options,weights);
+  }else{
+    freqExpNote.textContent='expected ~'+(1/sess.options.length*100).toFixed(0)+'% each';
+  }
+  const sorted=[...sess.options].sort((a,b)=>(freq[b]||0)-(freq[a]||0));
+  const topVal=freq[sorted[0]]||0;
+  const existingRows={};
+  freqBars.querySelectorAll('.freq-row[data-opt]').forEach(el=>{existingRows[el.dataset.opt]=el;});
+  Object.keys(existingRows).forEach(opt=>{if(!sess.options.includes(opt)){existingRows[opt].remove();delete existingRows[opt];}});
+  sorted.forEach(opt=>{
+    const count=freq[opt]||0;
+    const pct=total>0?(count/total*100).toFixed(0):0;
+    const barW=total>0?(count/maxCount*100):0;
+    const isTop=count===topVal&&topVal>0;
+    const isZero=count===0;
+    const expSuffix=expectedPcts?` <span class="exp">exp~${expectedPcts[opt]}%</span>`:'';
+    let row=existingRows[opt];
+    const isNew=!row;
+    if(isNew){
+      row=document.createElement('div');row.className='freq-row';row.dataset.opt=opt;
+      row.innerHTML='<div class="freq-row-top"><span class="freq-label"></span><span class="freq-nums"><span class="pct"></span>&thinsp;<span class="freq-cnt"></span></span></div><div class="freq-track"><div class="freq-fill" style="width:0%"></div></div>';
+    }
+    const lbl=row.querySelector('.freq-label');
+    lbl.textContent=opt+(isTop&&total>1?' \ud83c\udfc6':'');
+    lbl.className='freq-label'+(isTop?' winner':'');
+    row.querySelector('.pct').textContent=pct+'%';
+    row.querySelector('.freq-cnt').innerHTML='\u00b7 '+count+'/'+total+expSuffix;
+    const fill=row.querySelector('.freq-fill');
+    fill.className='freq-fill'+(isZero?' zero':isTop?' winner':'');
+    freqBars.appendChild(row);
+    if(isNew){requestAnimationFrame(()=>requestAnimationFrame(()=>{fill.style.width=barW+'%';}));}
+    else{fill.style.width=barW+'%';}
+  });
+}
+
+function syncCount(){
+  const n=chips.length;
+  countPill.textContent=n+' option'+(n!==1?'s':'');
+  DB.set('chips',chips);
+  saveSetBtn.style.display=n>=2?'':'none';
+  updateSessionChangeNote();
+}
+function addChip(raw){const val=raw.trim();if(!val||chips.includes(val))return false;chips.push(val);renderChips();syncCount();if(weightMode)renderWeightList();return true;}
+function removeChip(val){chips=chips.filter(c=>c!==val);renderChips();syncCount();if(weightMode)renderWeightList();}
+function renderChips(){
+  Array.from(chipField.querySelectorAll('.chip')).forEach(c=>c.remove());
+  chips.forEach(val=>{
+    const chip=document.createElement('div');chip.className='chip';
+    chip.innerHTML='<span class="chip-text">'+esc(val)+'</span><span class="chip-x" role="button" aria-label="Remove '+esc(val)+'" tabindex="0">\u2715</span>';
+    chip.querySelector('.chip-x').addEventListener('click',()=>removeChip(val));
+    chip.querySelector('.chip-x').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')removeChip(val);});
+    chipField.insertBefore(chip,chipInput);
+  });
+}
+chipField.addEventListener('click',e=>{if(e.target!==e.currentTarget&&!e.target.classList.contains('chip-x'))return;chipInput.focus();});
+chipInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter'||e.key===','){e.preventDefault();const val=chipInput.value.replace(/,/g,'').trim();if(val){addChip(val);chipInput.value='';}}
+  else if(e.key==='Backspace'&&chipInput.value===''&&chips.length){removeChip(chips[chips.length-1]);}
+});
+chipInput.addEventListener('blur',()=>{const val=chipInput.value.replace(/,/g,'').trim();if(val){addChip(val);chipInput.value='';}});
+chipInput.addEventListener('paste',e=>{
+  e.preventDefault();
+  const text=(e.clipboardData||window.clipboardData).getData('text');
+  const parts=text.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+  if(parts.length>1){parts.forEach(addChip);chipInput.value='';}else{chipInput.value=parts[0]||'';}
+});
+function setMode(toText){
+  textMode=toText;modeChipBtn.classList.toggle('active',!toText);modeTextBtn.classList.toggle('active',toText);
+  if(toText){chipField.style.display='none';pasteArea.classList.add('show');pasteArea.value=chips.join('\n');pasteArea.focus();}
+  else{const lines=pasteArea.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);chips=[...new Set(lines)];chipField.style.display='';pasteArea.classList.remove('show');renderChips();syncCount();if(weightMode)renderWeightList();}
+}
+modeChipBtn.addEventListener('click',()=>{if(textMode)setMode(false);});
+modeTextBtn.addEventListener('click',()=>{if(!textMode)setMode(true);});
+pasteArea.addEventListener('input',()=>{if(!textMode)return;chips=[...new Set(pasteArea.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean))];syncCount();if(weightMode)renderWeightList();});
+
+/* FIX: reset weights on preset load so stale weights don't bleed in */
+presetBar.addEventListener('click',e=>{
+  const btn=e.target.closest('.preset-chip');if(!btn)return;
+  const vals=btn.dataset.preset.split(',');
+  chips=[];weights={};DB.set('weights',weights);
+  vals.forEach(addChip);
+  if(textMode)pasteArea.value=chips.join('\n');
+  if(weightMode)renderWeightList();
+});
+
+weightToggle.addEventListener('click',()=>{
+  weightMode=!weightMode;
+  weightToggle.style.color=weightMode?'var(--gold)':'';
+  weightToggle.style.borderColor=weightMode?'var(--gold-mid)':'';
+  weightToggle.setAttribute('aria-pressed',String(weightMode));
+  weightSection.classList.toggle('show',weightMode);
+  if(weightMode)renderWeightList();
+  renderFreq();
+});
+resetWeights.addEventListener('click',()=>{weights={};DB.set('weights',weights);renderWeightList();renderFreq();});
+function renderWeightList(){
+  weightList.innerHTML='';
+  if(!chips.length){weightList.innerHTML='<div class="label" style="padding:8px 0;color:var(--text-3)">Add options first.</div>';return;}
+  chips.forEach(opt=>{
+    const row=document.createElement('div');row.className='weight-row';
+    const w=weights[opt]||1;
+    row.innerHTML='<span class="weight-label">'+esc(opt)+'</span><input class="weight-inp" type="number" min="0.1" max="999" step="0.1" value="'+w+'" aria-label="Weight for '+esc(opt)+'">';
+    row.querySelector('input').addEventListener('change',e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v>0){weights[opt]=v;DB.set('weights',weights);renderFreq();}});
+    weightList.appendChild(row);
+  });
+}
+function showIdle(){idleEl.style.display='';reelWrap.style.display='none';lockedEl.classList.remove('show');}
+function showReel(){idleEl.style.display='none';reelWrap.style.display='block';lockedEl.classList.remove('show');}
+function showLocked(value,opts){
+  idleEl.style.display='none';reelWrap.style.display='none';lockedEl.classList.add('show');
+  lockedVal.textContent=value;lockedVal.classList.remove('pop');void lockedVal.offsetWidth;lockedVal.classList.add('pop');
+  const spinNum=curSession?curSession.spins.length:1;
+  lockedMeta.textContent=opts.length+' options \u00b7 spin #'+spinNum+' this session';
+  postActions.classList.add('show');
+}
+const ITEM_H=68,WIN_H=204;
+function translateForCenter(i){return(WIN_H/2)-(i*ITEM_H)-(ITEM_H/2);}
+function buildReel(options,winner){
+  const ROUNDS=6+Math.ceil(8/options.length),items=[];
+  items.push(options[fairIdx(options.length)]);items.push(options[fairIdx(options.length)]);
+  for(let r=0;r<ROUNDS*options.length;r++)items.push(options[fairIdx(options.length)]);
+  items.push(winner);reelInner.innerHTML='';
+  const frag=document.createDocumentFragment();
+  items.forEach(text=>{const d=document.createElement('div');d.className='reel-item';d.textContent=text;frag.appendChild(d);});
+  reelInner.appendChild(frag);return items.length-1;
+}
+function animateReel(options,winner,duration,onDone){
+  const winPos=buildReel(options,winner);
+  const startT=translateForCenter(1),endT=translateForCenter(winPos);
+  reelInner.style.transition='none';reelInner.style.transform='translateY('+startT+'px)';
+  reelInner.classList.add('spinning');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    reelInner.style.transition='transform '+duration+'ms cubic-bezier(0.08,1,0.15,1)';
+    reelInner.style.transform='translateY('+endT+'px)';
+    setTimeout(()=>{reelInner.classList.remove('spinning');reelInner.classList.add('settling');setTimeout(()=>reelInner.classList.remove('settling'),500);},duration*.55);
+  }));
+  setTimeout(onDone,duration+260);
+}
+(function(){
+  const ctx=confettiCanvas.getContext('2d');let particles=[],raf;
+  const GOLDS=['#C9A96E','#E8CC92','#F5DFA0','#A07840','#FFEAB3'];
+  const GREYS=['#3A3530','#4A4540','#6A6560'];
+  function burst(){
+    const W=window.innerWidth,H=window.innerHeight;
+    confettiCanvas.width=W;confettiCanvas.height=H;confettiCanvas.classList.add('active');particles=[];
+    const count=Math.min(80,40+chips.length*2);
+    for(let i=0;i<count;i++){
+      const isGold=Math.random()>.4;
+      particles.push({x:W/2+(Math.random()-.5)*80,y:H*.35,vx:(Math.random()-.5)*9,vy:-(Math.random()*10+4),r:Math.random()*5+2,rot:Math.random()*360,spin:(Math.random()-.5)*8,color:isGold?GOLDS[Math.floor(Math.random()*GOLDS.length)]:GREYS[Math.floor(Math.random()*GREYS.length)],gravity:.28+Math.random()*.12,life:1,decay:.012+Math.random()*.01,shape:Math.random()>.5?'rect':'circle',w:Math.random()*6+3,h:Math.random()*3+1.5});
+    }
+    cancelAnimationFrame(raf);tick();
+  }
+  function tick(){
+    ctx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);let alive=false;
+    for(const p of particles){
+      p.x+=p.vx;p.y+=p.vy;p.vy+=p.gravity;p.vx*=.99;p.rot+=p.spin;p.life-=p.decay;
+      if(p.life<=0)continue;alive=true;
+      ctx.save();ctx.globalAlpha=Math.max(0,p.life);ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);ctx.fillStyle=p.color;
+      if(p.shape==='rect')ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      else{ctx.beginPath();ctx.arc(0,0,p.r,0,Math.PI*2);ctx.fill();}
+      ctx.restore();
+    }
+    if(alive)raf=requestAnimationFrame(tick);else confettiCanvas.classList.remove('active');
+  }
+  window._confettiBurst=burst;
+})();
+let busy=false;
+const noAnim=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+function setBusy(state){busy=state;spinBtn.disabled=state;spinBtn.innerHTML=state?'\u23f3&nbsp;&nbsp;Spinning\u2026':'\u25b6&nbsp;&nbsp;Spin';}
+function execute(){
+  if(busy)return;
+  const options=chips.length?chips:[];
+  if(options.length<2){warnBanner.textContent='Add at least 2 options first.';warnBanner.classList.add('on');setTimeout(()=>warnBanner.classList.remove('on'),2800);if(textMode)pasteArea.focus();else chipInput.focus();return;}
+  if(!hasRNG){warnBanner.textContent='Secure random API unavailable.';warnBanner.classList.add('on');return;}
+  warnBanner.classList.remove('on');lastHit=null;
+  const winner=weightMode?weightedPick(options,weights):options[fairIdx(options.length)];
+  setBusy(true);
+  if(noAnim){finishSpin(winner,options);return;}
+  const duration=Math.max(1800,Math.min(3200,options.length*200));
+  showReel();animateReel(options,winner,duration,()=>finishSpin(winner,options));
+}
+function finishSpin(winner,options){
+  lastHit={value:winner,options:[...options],ts:new Date().toISOString()};
+  recordSpin(winner);renderFreq();showLocked(winner,options);setBusy(false);buzz([20,15,70]);
+  if(!noAnim)setTimeout(()=>window._confettiBurst(),100);
+}
+spinBtn.addEventListener('click',execute);
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')execute();});
+
+/* FIX: iOS 13+ requires DeviceMotionEvent.requestPermission() via user gesture.
+   Long-press the Spin button (800ms) to trigger the permission prompt. */
+(function(){
+  let px=null,py=null,pz=null,cool=false;
+  function attachMotion(){
+    window.addEventListener('devicemotion',e=>{
+      const a=e.accelerationIncludingGravity;if(!a)return;
+      if(px===null){px=a.x;py=a.y;pz=a.z;return;}
+      const d=Math.abs(a.x-px)+Math.abs(a.y-py)+Math.abs(a.z-pz);
+      px=a.x;py=a.y;pz=a.z;
+      if(d>22&&!cool&&!busy){cool=true;execute();setTimeout(()=>cool=false,2500);}
+    });
+  }
+  if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
+    let pressTimer=null;
+    spinBtn.addEventListener('pointerdown',()=>{
+      pressTimer=setTimeout(async()=>{
+        try{const perm=await DeviceMotionEvent.requestPermission();if(perm==='granted'){attachMotion();toast('Shake-to-spin enabled');}}
+        catch(e){}
+      },800);
+    });
+    ['pointerup','pointercancel','pointermove'].forEach(ev=>spinBtn.addEventListener(ev,()=>clearTimeout(pressTimer)));
+  }else{attachMotion();}
+})();
+
+startOverBtn.addEventListener('click',async()=>{
+  if(!curSession||!curSession.spins.length)return;
+  const ok=await ask('Archive this session ('+curSession.spins.length+' spin'+(curSession.spins.length!==1?'s':'')+') and start fresh?<br><small style="color:var(--text-3)">Same options, clean count.</small>');
+  if(!ok)return;startOver();buzz(15);
+});
+if(navigator.share)shareBtn.style.display='';
+shareBtn.addEventListener('click',async()=>{
+  if(!lastHit||!navigator.share)return;
+  try{await navigator.share({title:'Selector',text:'\ud83c\udfb2 Selected: '+lastHit.value+'  (from '+lastHit.options.length+' options)'});}catch(e){}
+});
+
+/* FIX: clipboard copy with textarea execCommand fallback + error toast */
+copyBtn.addEventListener('click',async()=>{
+  if(!lastHit)return;
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(lastHit.value);
+    }else{
+      const ta=document.createElement('textarea');
+      ta.value=lastHit.value;ta.style.cssText='position:fixed;opacity:0;top:0;left:0;pointer-events:none';
+      document.body.appendChild(ta);ta.focus();ta.select();ta.setSelectionRange(0,99999);
+      const ok=document.execCommand('copy');document.body.removeChild(ta);
+      if(!ok)throw new Error('execCommand failed');
+    }
+    const orig=copyBtn.innerHTML;copyBtn.innerHTML='\u2713 Copied';
+    setTimeout(()=>copyBtn.innerHTML=orig,1800);buzz(15);
+  }catch(e){toast('Copy failed \u2014 select the result manually');}
+});
+
+/* FIX: immediate save (no confirm modal) + undo toast + duplicate guard + uses 'saved' class */
+saveSetBtn.addEventListener('click',()=>{
+  if(chips.length<2)return;
+  const key=optKey(chips);
+  const exists=savedSets.find(s=>optKey(s.options)===key);
+  if(exists){toast('Already saved'+(exists.name?' as "'+exists.name+'"':''));return;}
+  const entry={id:uid(),options:[...chips],name:'',savedAt:new Date().toISOString()};
+  savedSets.unshift(entry);DB.set('sets',savedSets);updateBadges();renderSets();
+  saveSetBtn.textContent='\u2605';saveSetBtn.classList.add('saved');
+  setTimeout(()=>{saveSetBtn.textContent='\u2606';saveSetBtn.classList.remove('saved');},1800);
+  buzz([12,8,12]);
+  toastWithUndo('Set saved \u00b7 '+chips.length+' options',()=>{
+    savedSets=savedSets.filter(s=>s.id!==entry.id);
+    DB.set('sets',savedSets);updateBadges();renderSets();toast('Set removed');
+  });
+});
+
+clearSessionsBtn.addEventListener('click',async()=>{
+  const total=sessions.length+(curSession&&curSession.spins.length?1:0);
+  if(!total)return;
+  const ok=await ask('Clear all '+total+' session'+(total!==1?'s':'')+'?');
+  if(!ok)return;
+  sessions=[];DB.set('sessions',sessions);curSession=null;DB.set('curSession',null);
+  updateBadges();renderSessions();renderFreq();showIdle();
+  lastHit=null;postActions.classList.remove('show');updateSessionChangeNote();
+});
+sessSearch.addEventListener('input',()=>renderSessions(sessSearch.value));
+
+/* FIX: show cap notice when sessions array is at the 100-item limit */
+function renderSessions(filter=''){
+  sessList.innerHTML='';
+  sessionsCapNotice.style.display=sessions.length>=100?'':'none';
+  const all=[];
+  if(curSession&&curSession.spins.length)all.push({...curSession,isCurrent:true});
+  sessions.forEach(s=>all.push(s));
+  const filtered=filter?all.filter(s=>s.options.some(o=>o.toLowerCase().includes(filter.toLowerCase()))||s.spins.some(sp=>sp.value.toLowerCase().includes(filter.toLowerCase()))):all;
+  if(!filtered.length){sessList.innerHTML='<div class="empty"><div class="empty-icon">\u2261</div><div class="empty-text">'+(filter?'Nothing matches.':'No sessions yet.\nSpin to start tracking.')+'</div></div>';return;}
+  const frag=document.createDocumentFragment();
+  filtered.forEach(sess=>frag.appendChild(makeSessionCard(sess)));
+  sessList.appendChild(frag);
+}
+function makeSessionCard(sess){
+  const{freq,total}=buildFreqData(sess.spins,sess.options);
+  const sorted=[...sess.options].sort((a,b)=>(freq[b]||0)-(freq[a]||0));
+  const topOpt=sorted[0],topCount=freq[topOpt]||0,topPct=total>0?(topCount/total*100).toFixed(0):0;
+  const optPreview=sess.options.slice(0,4).join(', ')+(sess.options.length>4?' +'+(sess.options.length-4)+'\u2026':'');
+  const isCurrent=!!sess.isCurrent;
+  const card=document.createElement('div');card.className='scard';
+  card.innerHTML='<div class="scard-head"><div class="scard-main">'+(isCurrent?'<div style="font-size:.54rem;letter-spacing:2px;text-transform:uppercase;color:var(--teal);margin-bottom:4px">\u25cf Live session</div>':'')+'<div class="scard-opts-preview">'+esc(optPreview)+'</div><div class="scard-meta"><span>'+sess.options.length+' options</span><span>'+fmtDate(sess.startedAt)+'</span>'+(topCount>0?'<span>Top: <strong style="color:var(--gold)">'+esc(topOpt)+'</strong> ('+topPct+'%)</span>':'')+'</div></div><div class="scard-badge"><div class="scard-spins">'+total+'</div><div class="scard-spins-lbl">spins</div></div></div><div class="scard-expand" id="expand-'+esc(sess.id)+'"><div class="scard-dist">'+sorted.map(opt=>{const c=freq[opt]||0,pct=total>0?(c/total*100).toFixed(0):0,barW=total>0?(c/Math.max(topCount,1)*100):0,isTop=c===topCount&&topCount>0;return '<div class="dist-row"><div class="dist-top"><span class="dist-label'+(isTop?' top':'')+'">'+esc(opt)+(isTop&&total>1?' \ud83c\udfc6':'')+'</span><span class="dist-nums"><span class="pct">'+pct+'%</span> \u00b7 '+c+'\xd7</span></div><div class="dist-track"><div class="dist-fill'+(isTop?' top':'')+'" style="width:'+barW+'%"></div></div></div>';}).join('')+'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn btn-sm btn-outline load-opts-btn" data-id="'+esc(sess.id)+'">\u21a9 Load options</button>'+(isCurrent?'':'<button class="btn btn-sm btn-danger del-sess-btn" data-id="'+esc(sess.id)+'">\u2715 Delete</button>')+'</div></div></div>';
+  card.querySelector('.scard-head').addEventListener('click',()=>card.querySelector('.scard-expand').classList.toggle('open'));
+  card.querySelector('.load-opts-btn').addEventListener('click',e=>{
+    e.stopPropagation();
+    chips=[...sess.options];weights={};DB.set('chips',chips);DB.set('weights',weights);
+    renderChips();syncCount();if(textMode)pasteArea.value=chips.join('\n');if(weightMode)renderWeightList();
+    showIdle();lastHit=null;postActions.classList.remove('show');renderFreq();switchTab('spin');
+  });
+  const delBtn=card.querySelector('.del-sess-btn');
+  if(delBtn)delBtn.addEventListener('click',async e=>{
+    e.stopPropagation();
+    const ok=await ask('Delete this session ('+total+' spin'+(total!==1?'s':'')+')?');
+    if(!ok)return;sessions=sessions.filter(s=>s.id!==sess.id);DB.set('sessions',sessions);updateBadges();renderSessions(sessSearch.value);
+  });
+  return card;
+}
+clearSetsBtn.addEventListener('click',async()=>{
+  if(!savedSets.length)return;
+  const ok=await ask('Remove all '+savedSets.length+' saved set'+(savedSets.length!==1?'s':'')+'?');
+  if(!ok)return;savedSets=[];DB.set('sets',savedSets);updateBadges();renderSets();
+});
+function renderSets(){
+  setsList.innerHTML='';
+  if(!savedSets.length){setsList.innerHTML='<div class="empty"><div class="empty-icon">\u25c8</div><div class="empty-text">No saved sets yet.\nTap \u2606 next to your\noptions to save them.</div></div>';return;}
+  const frag=document.createDocumentFragment();savedSets.forEach(s=>frag.appendChild(makeSetCard(s)));setsList.appendChild(frag);
+}
+function makeSetCard(s){
+  const preview=s.options.slice(0,5).join(', ')+(s.options.length>5?' +'+(s.options.length-5)+' more':'');
+  const card=document.createElement('div');card.className='set-card';
+  card.innerHTML='<div class="set-body"><input class="set-name-inp" value="'+esc(s.name||'')+'" placeholder="Name this set\u2026" maxlength="40" aria-label="Set name"><div class="set-opts">'+esc(preview)+'</div><div class="set-meta">'+s.options.length+' options \u00b7 saved '+fmtDate(s.savedAt)+'</div></div><div class="set-actions"><button class="ic-btn teal load-set-btn" title="Load this set" aria-label="Load set">\u21a9</button><button class="ic-btn red del-set-btn" title="Delete" aria-label="Delete set">\u2715</button></div>';
+  card.querySelector('.set-name-inp').addEventListener('change',e=>{const s2=savedSets.find(x=>x.id===s.id);if(s2){s2.name=e.target.value.trim();DB.set('sets',savedSets);}});
+  card.querySelector('.load-set-btn').addEventListener('click',()=>{
+    chips=[...s.options];weights={};DB.set('chips',chips);DB.set('weights',weights);
+    renderChips();syncCount();if(textMode)pasteArea.value=chips.join('\n');if(weightMode)renderWeightList();
+    showIdle();lastHit=null;postActions.classList.remove('show');renderFreq();switchTab('spin');
+  });
+  card.querySelector('.del-set-btn').addEventListener('click',async()=>{
+    const ok=await ask('Remove <strong>'+esc(s.name||preview)+'</strong>?');
+    if(!ok)return;savedSets=savedSets.filter(x=>x.id!==s.id);DB.set('sets',savedSets);updateBadges();renderSets();
+  });
+  return card;
+}
+function switchTab(name){
+  document.querySelectorAll('.nav-btn').forEach(b=>{const active=b.dataset.tab===name;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});
+  document.querySelectorAll('.panel').forEach(p=>{p.classList.toggle('active',p.id==='panel-'+name);});
+  if(name==='sessions')renderSessions(sessSearch.value);
+  if(name==='sets')renderSets();
+}
+document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
+let deferredInstall=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;installBtn.classList.add('show');});
+installBtn.addEventListener('click',async()=>{if(!deferredInstall)return;deferredInstall.prompt();const{outcome}=await deferredInstall.userChoice;deferredInstall=null;installBtn.classList.remove('show');});
+window.addEventListener('appinstalled',()=>{installBtn.classList.remove('show');deferredInstall=null;});
+
+/* FIX: SW now uses runtime-only caching (no fragile cache.add path), revokeObjectURL on both
+   success and failure. Blob SW still silently fails on iOS Safari — no fix possible in single-file. */
+if('serviceWorker' in navigator){
+  const swCode=`const V='srs4-v2';
+self.addEventListener('install',()=>self.skipWaiting());
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  e.respondWith(caches.match(e.request).then(hit=>{
+    if(hit)return hit;
+    return fetch(e.request).then(res=>{
+      if(res&&res.status===200&&res.type!=='opaque'){const cl=res.clone();caches.open(V).then(c=>c.put(e.request,cl));}
+      return res;
+    }).catch(()=>caches.match(e.request));
+  }));
+});`;
+  const scope=location.pathname.endsWith('/')?location.pathname:location.pathname.replace(/[^/]+$/,'')||'/';
+  try{
+    const blob=new Blob([swCode],{type:'application/javascript'});
+    const url=URL.createObjectURL(blob);
+    navigator.serviceWorker.register(url,{scope})
+      .then(()=>setTimeout(()=>URL.revokeObjectURL(url),15000))
+      .catch(()=>URL.revokeObjectURL(url));
+  }catch(e){}
+}
+(function(){
+  function mkIcon(size){const c=document.createElement('canvas');c.width=c.height=size;const ctx=c.getContext('2d');ctx.fillStyle='#0A0A0A';ctx.fillRect(0,0,size,size);const m=size*.04;ctx.strokeStyle='rgba(226,185,74,.6)';ctx.lineWidth=size*.02;ctx.strokeRect(m,m,size-2*m,size-2*m);ctx.beginPath();ctx.arc(size/2,size/2,size*.3,0,Math.PI*2);ctx.strokeStyle='rgba(226,185,74,.8)';ctx.lineWidth=size*.025;ctx.stroke();ctx.beginPath();ctx.arc(size/2,size/2,size*.07,0,Math.PI*2);ctx.fillStyle='#E2B94A';ctx.fill();return c.toDataURL('image/png');}
+  const manifest={name:'Selector',short_name:'Selector',description:'Cryptographically fair random selection.',start_url:'./',scope:'./',display:'standalone',background_color:'#0A0A0A',theme_color:'#0A0A0A',orientation:'portrait-primary',icons:[{src:mkIcon(192),sizes:'192x192',type:'image/png',purpose:'any maskable'},{src:mkIcon(512),sizes:'512x512',type:'image/png',purpose:'any maskable'}]};
+  const link=document.createElement('link');link.rel='manifest';link.href=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'}));document.head.appendChild(link);
+})();
+renderChips();syncCount();updateBadges();renderSessions();renderSets();renderFreq();
+if(curSession&&curSession.spins.length&&chips.length>=2)postActions.classList.add('show');
+if(!hasRNG){warnBanner.textContent='Secure random API unavailable.';warnBanner.classList.add('on');spinBtn.disabled=true;}
+</script>
+</body>
+</html>
